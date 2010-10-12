@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<product productid="rcd_advanced_infractions" active="1">
+	<title>Advanced Infractions</title>
+	<description>Provides hooks for infraction types</description>
+	<version>0.1</version>
+	<url />
+	<versioncheckurl />
+	<apm_releasedate>0</apm_releasedate>
+	<apm_author />
+	<apm_relatedurl />
+	<apm_extrainfo />
+	<apm_extraedit />
+	<dependencies>
+	</dependencies>
+	<codes>
+		<code version="0.1">
+			<installcode><![CDATA[$db->query("ALTER TABLE `infractionlevel` 
+            ADD `hook_start` TEXT NULL,
+            ADD `hook_end` TEXT NULL");]]></installcode>
+			<uninstallcode><![CDATA[$db->query("ALTER TABLE `infractionlevel` 
+            DROP `hook_start`,
+            DROP `hook_end`" );]]></uninstallcode>
+		</code>
+	</codes>
+	<templates>
+	</templates>
+	<stylevardfns>
+	</stylevardfns>
+	<stylevars>
+	</stylevars>
+	<plugins>
+		<plugin active="1" executionorder="5">
+			<title><![CDATA[Redirect to "advanced infractions" script]]></title>
+			<hookname>admin_global</hookname>
+			<phpcode><![CDATA[// Redirects to Advanced Infraction Script from:
+//
+// ACP -> Infractions -> Add New User Infraction Level, 
+// ACP -> Infractions-> User Infraction Manager - "Edit", 
+// ACP -> Infractions-> User Infraction Manager - "Add New User Infraction Level"
+
+
+if (strpos($_SERVER['REQUEST_URI'], 'admincp/admininfraction.php?do=editlevel'))
+{
+    header("Location: " . str_replace('admininfraction', 'rcd_admininfraction', $_SERVER['REQUEST_URI']));
+}]]></phpcode>
+		</plugin>
+		<plugin active="1" executionorder="5">
+			<title>Infraction Custom Hook End</title>
+			<hookname>infraction_update_complete</hookname>
+			<phpcode><![CDATA[if (isset($rcd_adv_infrac) && !defined('PMPREVIEW'))
+{
+    if ($rcd_adv_infrac['hook_end'])
+    {
+        eval($rcd_adv_infrac['hook_end']);
+    } 
+}]]></phpcode>
+		</plugin>
+		<plugin active="1" executionorder="5">
+			<title><![CDATA[Infraction Custom Hook Start & Data Init]]></title>
+			<hookname>infraction_update_start</hookname>
+			<phpcode><![CDATA[if (isset($_REQUEST['infractionlevelid']))
+{
+    global $rcd_adv_infrac;
+    $vbulletin->input->clean_array_gpc('r', array(
+    'infractionlevelid' => TYPE_INT,
+        ));  
+    
+    $rcd_adv_infrac = $db->query_first("SELECT * FROM " . TABLE_PREFIX . "infractionlevel WHERE infractionlevelid = " . $vbulletin->GPC['infractionlevelid']);
+
+    if ($rcd_adv_infrac['hook_start'])
+    {
+        eval($rcd_adv_infrac['hook_start']);
+    }
+}]]></phpcode>
+		</plugin>
+	</plugins>
+	<phrases>
+		<phrasetype name="User Infraction Levels" fieldname="infractionlevel">
+			<phrase name="rcd_infraction_hook_end" date="1286885376" username="ruseinov" version=""><![CDATA[Hook Infraction End]]></phrase>
+			<phrase name="rcd_infraction_hook_start" date="1286885393" username="ruseinov" version=""><![CDATA[Hook Infraction Start]]></phrase>
+		</phrasetype>
+	</phrases>
+	<options>
+	</options>
+	<helptopics>
+	</helptopics>
+	<cronentries>
+	</cronentries>
+	<faqentries>
+	</faqentries>
+	<templateedits>
+	</templateedits>
+</product>
