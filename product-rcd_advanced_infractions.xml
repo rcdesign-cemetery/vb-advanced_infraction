@@ -36,8 +36,8 @@
 			<phpcode><![CDATA[// Redirects to Advanced Infraction Script from:
 //
 // ACP -> Infractions -> Add New User Infraction Level, 
-// ACP -> Infractions-> User Infraction Manager - "Edit", 
-// ACP -> Infractions-> User Infraction Manager - "Add New User Infraction Level"
+// ACP -> Infractions -> User Infraction Manager - "Edit", 
+// ACP -> Infractions -> User Infraction Manager - "Add New User Infraction Level"
 
 
 if (strpos($_SERVER['REQUEST_URI'], 'admincp/admininfraction.php?do=editlevel'))
