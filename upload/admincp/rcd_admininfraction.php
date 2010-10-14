@@ -34,7 +34,7 @@ print_cp_header($vbphrase['user_infraction_manager']);
 
 if (empty($_REQUEST['do']))
 {
-    $_REQUEST['do'] = 'modify';
+    $_REQUEST['do'] = 'editlevel';
 }
 
 // ###################### Start add #######################
@@ -46,7 +46,8 @@ if ($_REQUEST['do'] == 'editlevel')
         $infraction = $db->query_first("SELECT * FROM " . TABLE_PREFIX . "infractionlevel WHERE infractionlevelid = " . $vbulletin->GPC['infractionlevelid']);
 
         $title = 'infractionlevel' . $infraction['infractionlevelid'] . '_title';
-
+        $infr_user_msg_id = 'infractionlevel' . $infraction['infractionlevelid'] . '_infr_user_msg';
+        
         if ($phrase = $db->query_first("
             SELECT text
             FROM " . TABLE_PREFIX . "phrase
@@ -58,6 +59,20 @@ if ($_REQUEST['do'] == 'editlevel')
             $infraction['title'] = $phrase['text'];
             $infraction['titlevarname'] = 'infractionlevel' . $infraction['infractionlevelid'] . '_title';
         }
+        unset($phrase);
+        
+        if ($phrase = $db->query_first("
+            SELECT text
+            FROM " . TABLE_PREFIX . "phrase
+            WHERE languageid = 0 AND
+                fieldname = 'infractionlevel' AND
+                varname = '$infr_user_msg_id'
+        "))
+        {
+            $infraction['infr_user_msg'] = $phrase['text'];
+            $infraction['infr_user_msgvarname'] = 'infractionlevel' . $infraction['infractionlevelid'] . '_infr_user_msg';
+        }
+        
         if ($infraction['period'] == 'N')
         {
             $infraction['expires'] = '';
@@ -85,6 +100,15 @@ if ($_REQUEST['do'] == 'editlevel')
     else
     {
         print_input_row($vbphrase['title'], 'title');
+    }
+    
+    if ($infraction['infr_user_msg'])
+    {
+        print_textarea_row($vbphrase['rcd_infraction_user_msg'] . '<dfn>' . construct_link_code($vbphrase['translations'], "phrase.php?" . $vbulletin->session->vars['sessionurl'] . "do=edit&fieldname=infractionlevel&varname=$infr_user_msg_id&t=1", 1)  . '</dfn>', 'infr_user_msg', $infraction['infr_user_msg']);
+    }
+    else
+    {
+        print_textarea_row($vbphrase['rcd_infraction_user_msg'], 'infr_user_msg');
     }
 
     $periods = array(
@@ -119,7 +143,8 @@ if ($_POST['do'] == 'updatelevel')
         'warning' => TYPE_BOOL,
         'extend'  => TYPE_BOOL,
         'hook_start' => TYPE_STR,
-        'hook_end' => TYPE_STR
+        'hook_end' => TYPE_STR,
+        'infr_user_msg' => TYPE_STR
     ));
 
     if (empty($vbulletin->GPC['title']) OR (empty($vbulletin->GPC['expires']) AND $vbulletin->GPC['period'] != 'N'))
@@ -164,13 +189,61 @@ if ($_POST['do'] == 'updatelevel')
             " . TIMENOW . ",
             '" . $db->escape_string($vbulletin->options['templateversion']) . "')
     ");
+    
+     $db->query_write("
+        REPLACE INTO " . TABLE_PREFIX . "phrase
+            (languageid, fieldname, varname, text, product, username, dateline, version)
+        VALUES
+            (0,
+            'infractionlevel',
+            'infractionlevel" . $vbulletin->GPC['infractionlevelid'] . "_infr_user_msg',
+            '" . $db->escape_string($vbulletin->GPC['infr_user_msg']) . "',
+            'vbulletin',
+            '" . $db->escape_string($vbulletin->userinfo['username']) . "',
+            " . TIMENOW . ",
+            '" . $db->escape_string($vbulletin->options['templateversion']) . "')
+    ");
 
     require_once(DIR . '/includes/adminfunctions_language.php');
     build_language();
 
-    define('CP_REDIRECT', 'rcd_admininfraction.php?do=modify');
+    define('CP_REDIRECT', 'admininfraction.php?do=modify');
     print_stop_message('saved_infraction_level_successfully');
 
+}
+
+// ###################### Start Remove #######################
+
+if ($_REQUEST['do'] == 'removelevel')
+{
+
+    print_form_header('rcd_admininfraction', 'killlevel');
+    construct_hidden_code('infractionlevelid', $vbulletin->GPC['infractionlevelid']);
+    print_table_header(construct_phrase($vbphrase['confirm_deletion_x'], htmlspecialchars_uni($vbphrase['infractionlevel' . $vbulletin->GPC['infractionlevelid'] . '_title'])));
+    print_description_row($vbphrase['are_you_sure_you_want_to_delete_this_infraction_level']);
+    print_submit_row($vbphrase['yes'], '', 2, $vbphrase['no']);
+
+}
+
+// ###################### Start Kill #######################
+
+if ($_POST['do'] == 'killlevel')
+{
+
+    if ($phrase = $db->query_first("SELECT text FROM " . TABLE_PREFIX . "phrase WHERE text <> '' AND fieldname = 'infractionlevel' AND varname = 'infractionlevel" . $vbulletin->GPC['infractionlevelid'] . "_title' AND languageid IN (0," . intval($vbulletin->options['languageid']) . ") ORDER BY languageid DESC"))
+    {
+        $db->query_write("UPDATE " . TABLE_PREFIX . "infraction SET customreason = '" . $db->escape_string($phrase['text']) . "' WHERE infractionlevelid =" . $vbulletin->GPC['infractionlevelid']);
+    }
+
+    $db->query_write("DELETE FROM " . TABLE_PREFIX . "infractionlevel WHERE infractionlevelid = " . $vbulletin->GPC['infractionlevelid']);
+    $db->query_write("DELETE FROM " . TABLE_PREFIX . "phrase WHERE fieldname = 'infractionlevel' AND varname = 'infractionlevel" . $vbulletin->GPC['infractionlevelid'] . "_title'");
+    $db->query_write("DELETE FROM " . TABLE_PREFIX . "phrase WHERE fieldname = 'infractionlevel' AND varname = 'infractionlevel" . $vbulletin->GPC['infractionlevelid'] . "_infr_user_msg'");
+    
+    require_once(DIR . '/includes/adminfunctions_language.php');
+    build_language();
+
+    define('CP_REDIRECT', 'admininfraction.php?do=modify');
+    print_stop_message('deleted_infraction_level_successfully');
 }
 print_cp_footer();
 

@@ -37,10 +37,11 @@
 //
 // ACP -> Infractions -> Add New User Infraction Level, 
 // ACP -> Infractions -> User Infraction Manager - "Edit", 
-// ACP -> Infractions -> User Infraction Manager - "Add New User Infraction Level"
+// ACP -> Infractions -> User Infraction Manager - "Add New User Infraction Level",
+// ACP -> Infractions -> User Infraction Managed - "Delete"
 
-
-if (strpos($_SERVER['REQUEST_URI'], 'admincp/admininfraction.php?do=editlevel'))
+if (strpos($_SERVER['REQUEST_URI'], 'admincp/admininfraction.php?do=editlevel') 
+    || strpos($_SERVER['REQUEST_URI'], 'admincp/admininfraction.php?do=removelevel'))
 {
     header("Location: " . str_replace('admininfraction', 'rcd_admininfraction', $_SERVER['REQUEST_URI']));
 }]]></phpcode>
@@ -72,6 +73,20 @@ if (strpos($_SERVER['REQUEST_URI'], 'admincp/admininfraction.php?do=editlevel'))
     {
         eval($rcd_adv_infrac['hook_start']);
     }
+    
+    // Add extended infraction description to PM/E-mail
+    if ($vbulletin->GPC['message'] == '<br>')
+    {  
+        require_once(DIR . '/includes/functions_misc.php');
+        $rcd_infr_msg_id = 'infractionlevel' . $vbulletin->GPC['infractionlevelid'] 
+            . '_infr_user_msg';
+        $rcd_infr_user_msg =  fetch_phrase($rcd_infr_msg_id, 'infractionlevel', '', true, true, $userinfo['languageid']);
+
+        if (!strpos($rcd_infr_user_msg, $rcd_infr_msg_id))
+        {
+            $vbulletin->GPC['message'] = $rcd_infr_user_msg; 
+        }
+    }
 }]]></phpcode>
 		</plugin>
 	</plugins>
@@ -79,6 +94,7 @@ if (strpos($_SERVER['REQUEST_URI'], 'admincp/admininfraction.php?do=editlevel'))
 		<phrasetype name="User Infraction Levels" fieldname="infractionlevel">
 			<phrase name="rcd_infraction_hook_end" date="1286885376" username="ruseinov" version=""><![CDATA[Hook Infraction End]]></phrase>
 			<phrase name="rcd_infraction_hook_start" date="1286885393" username="ruseinov" version=""><![CDATA[Hook Infraction Start]]></phrase>
+			<phrase name="rcd_infraction_user_msg" date="1287069001" username="ruseinov" version=""><![CDATA[Description for Users]]></phrase>
 		</phrasetype>
 	</phrases>
 	<options>
