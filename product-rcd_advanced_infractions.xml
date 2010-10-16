@@ -75,7 +75,18 @@ if (strpos($_SERVER['REQUEST_URI'], 'admincp/admininfraction.php?do=editlevel')
     }
     
     // Add extended infraction description to PM/E-mail
-    if ($vbulletin->GPC['message'] == '<br>')
+
+    // Check if incoming message is empty
+    if ($vbulletin->GPC['wysiwyg'])
+    {
+		require_once(DIR . '/includes/functions_wysiwyg.php');
+        $msg_trimmed = trim(convert_wysiwyg_html_to_bbcode($vbulletin->GPC['message'], $vbulletin->options['privallowhtml']));
+    } else {
+        $msg_trimmed = trim($vbulletin->GPC['message']);
+    }
+
+    // if empty - add our message and enforce plain (bbcode) mode
+    if (empty($msg_trimmed))
     {  
         require_once(DIR . '/includes/functions_misc.php');
         $rcd_infr_msg_id = 'infractionlevel' . $vbulletin->GPC['infractionlevelid'] 
@@ -84,7 +95,9 @@ if (strpos($_SERVER['REQUEST_URI'], 'admincp/admininfraction.php?do=editlevel')
 
         if (!strpos($rcd_infr_user_msg, $rcd_infr_msg_id))
         {
-            $vbulletin->GPC['message'] = $rcd_infr_user_msg; 
+            $vbulletin->GPC['message'] = $rcd_infr_user_msg;
+            $vbulletin->GPC['wysiwyg'] = 0;
+            $vbulletin->GPC['parseurl'] = 1;
         }
     }
 }]]></phpcode>
@@ -94,7 +107,7 @@ if (strpos($_SERVER['REQUEST_URI'], 'admincp/admininfraction.php?do=editlevel')
 		<phrasetype name="User Infraction Levels" fieldname="infractionlevel">
 			<phrase name="rcd_infraction_hook_end" date="1286885376" username="ruseinov" version=""><![CDATA[Hook Infraction End]]></phrase>
 			<phrase name="rcd_infraction_hook_start" date="1286885393" username="ruseinov" version=""><![CDATA[Hook Infraction Start]]></phrase>
-			<phrase name="rcd_infraction_user_msg" date="1287069001" username="ruseinov" version=""><![CDATA[Description for Users]]></phrase>
+			<phrase name="rcd_infraction_user_msg" date="1287188755" username="Vitaly" version=""><![CDATA[Description for Users (bbcode & plain URLs allowed)]]></phrase>
 		</phrasetype>
 	</phrases>
 	<options>
