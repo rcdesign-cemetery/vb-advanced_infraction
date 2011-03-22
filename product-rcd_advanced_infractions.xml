@@ -15,10 +15,10 @@
 	</dependencies>
 	<codes>
 		<code version="0.1">
-			<installcode><![CDATA[$db->query("ALTER TABLE `infractionlevel` 
+			<installcode><![CDATA[$db->query("ALTER TABLE " . TABLE_PREFIX . "infractionlevel 
             ADD `hook_start` TEXT NULL,
             ADD `hook_end` TEXT NULL");]]></installcode>
-			<uninstallcode><![CDATA[$db->query("ALTER TABLE `infractionlevel` 
+			<uninstallcode><![CDATA[$db->query("ALTER TABLE " . TABLE_PREFIX . "infractionlevel 
             DROP `hook_start`,
             DROP `hook_end`" );]]></uninstallcode>
 		</code>
